@@ -33,6 +33,10 @@
 #include <Sprites.h>
 #include <GfxParticleSys.h>
 
+#define CUTE_C2_IMPLEMENTATION
+
+#include <cute_c2.h>
+
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
@@ -104,9 +108,19 @@ void detectBulletWithMeteoriteCollisions(){
       for (int j = 0; j < numMeteoriteParticles; j++)
       {
          if( meteoriteParticles[j].isAlive) {
-            int radius =  round((int)(8 /meteoriteParticles[j].vx));
-            if(pow(bullets[i].x  - meteoriteParticles[j].x, 2) + pow(bullets[i].y - meteoriteParticles[j].y, 2) <= pow(radius, 2)) {
-              // point is inside the circle, we have a collision
+
+            // meteorite - "circle"
+            float circleRadius = (float) round((int)(8 /abs(max(meteoriteParticles[j].vx, -2))));
+            c2v center = { (float) meteoriteParticles[j].x, (float)meteoriteParticles[j].y};
+            c2Circle meteoriteCircle = {center, circleRadius};
+
+            // bullet trace - "capsule"
+            c2v start = {(float) (bullets[i].x - bulletSpeedOn), (float) bullets[i].y};
+            c2v end = {(float) bullets[i].x, (float)bullets[i].y};
+            float capsuleRadius = 1.0;
+            c2Capsule bulletCapsule = {start, end, capsuleRadius};
+            
+            if(c2CircletoCapsule(meteoriteCircle, bulletCapsule)) {
               // update explosion emitter position
               explosionCenter.x = meteoriteParticles[j].x;
               explosionCenter.y = meteoriteParticles[j].y;
@@ -118,6 +132,34 @@ void detectBulletWithMeteoriteCollisions(){
     }
   }
 }
+
+
+// void detectSpaceshipWithMeteoriteCollisions(){
+//   for (int j = 0; j < numMeteoriteParticles; j++)
+//     {
+//         if( meteoriteParticles[j].isAlive) {
+
+//             // meteorite - "circle"
+//             float circleRadius = (float) round((int)(8 /abs(max(meteoriteParticles[j].vx, -2))));
+//             c2v center = { (float) meteoriteParticles[j].x, (float)meteoriteParticles[j].y};
+//             c2Circle meteoriteCircle = {center, circleRadius};
+
+//             // spaceship - "polygon"
+//             c2v start = {(float) (bullets[i].x - bulletSpeedOn), (float) bullets[i].y};
+//             c2v end = {(float) bullets[i].x, (float)bullets[i].y};
+//             float capsuleRadius = 1.0;
+//             c2Capsule bulletCapsule = {start, end, capsuleRadius};
+            
+//             if(c2CircletoCapsule(meteoriteCircle, bulletCapsule)) {
+//               // update explosion emitter position
+//               explosionCenter.x = meteoriteParticles[j].x;
+//               explosionCenter.y = meteoriteParticles[j].y;
+//               meteoriteParticles[j].isAlive = false;
+//               explosionSystem.cycles_remaining = numExplosionParticles;
+//             }
+//          }
+//       }
+// }
 
 void drawLives() {
   display.fillRect(-1, -1, 30,10, BLACK);
@@ -133,21 +175,6 @@ void drawSpaceship()
   display.drawBitmap(positionX, positionY - 3, userShipMask, USER_SHIP_WIDTH, USER_SHIP_HIGHT, BLACK);
   display.drawBitmap(positionX+1, positionY - 3, userShip, USER_SHIP_WIDTH, USER_SHIP_HIGHT, WHITE);
 }
-
-
-// void drawAlienShips()
-// {
-//   int i;
-//   for (i = 0; i < numAlienShips; i++)
-//   {
-//    if( alienShips[i].isAlive) {
-//       // draw mask
-//       display.drawBitmap(alienShips[i].x, alienShips[i].y  + cos((alienShips[i].x / 90.0) * 2*PI)*5, spaceship2_mask, 16, 11, BLACK);
-//       // draw image
-//       display.drawBitmap(alienShips[i].x, alienShips[i].y  + cos((alienShips[i].x / 90.0) * 2*PI)*5, spaceship2, 16, 11, WHITE);
-//     }
-//   }
-// }
 
 void setup() {
   Serial.begin(9600);
