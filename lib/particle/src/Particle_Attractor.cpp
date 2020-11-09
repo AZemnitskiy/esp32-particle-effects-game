@@ -40,10 +40,10 @@ void Particle_Attractor::update(void)
         tempVy = 0;//-tempVy;
     }
 
-    if (tempVx > 50 || tempVx < -50) vx = random(10)-5;
+    if (tempVx > 4 || tempVx < -4) vx = 4* tempVx/abs(tempVx);
     else vx = tempVx;
 
-    if (tempVy > 50 || tempVy < -50) vy = random(10)-5;
+    if (tempVy > 4 || tempVy < -4) vy = 4* tempVy/abs(tempVy);
     else vy = tempVy;
 
     if (tempX > PS_MAX_X) x = PS_MAX_X;

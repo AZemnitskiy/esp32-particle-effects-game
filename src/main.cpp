@@ -2,7 +2,7 @@
   * Meteorite shooter game for Arduino/ESP32 based on Adafruit_GFX library
   * that uses particles physics for all animation effects.
   * 
-  * Tested to work with SSD1306 OLED display, but should work with any supporting display.
+  * Tested to work with SSD1306 OLED display, but should work with most other monochrome and color displays.
   * 
   * Particle Animations:
   * - Meteorites: side emmiter, draws polygons
@@ -21,6 +21,7 @@
 // particle & system
 #include <ParticleSys.h>
 #include <Particle_Std.h>
+#include <Particle_Attractor.h>
 
 //emmiters
 #include <Emitter_Fire.h>
@@ -73,7 +74,7 @@ GfxParticleSys meteoriteSystem(&display, WHITE, numMeteoriteParticles, meteorite
 
 // alien ship settings
 const byte numAlienShips = 1;
-Particle_Std alienShips[numAlienShips];
+Particle_Attractor alienShips[numAlienShips];
 Emitter_Side alienEmitter('r');
 GfxParticleSys alienSystem(&display, WHITE, numAlienShips, alienShips, &alienEmitter);
 
@@ -154,6 +155,7 @@ void setup() {
   display.clearDisplay();
 
   Emitter_Fire::maxTtl = 6;
+  Particle_Attractor::atf = 2;
 
   // explosion is always trggered on-demand
   explosionSystem.is_forever = false;
@@ -211,6 +213,9 @@ void processInputs() {
     // update fire emmiter postion
     fireEmitter.yStart = positionY + 1;
     fireEmitter.yEnd   = positionY  + fireWidth;
+
+    Particle_Attractor::atx = meteoriteParticles[0].x;
+    Particle_Attractor::aty = meteoriteParticles[0].y;
 
     // update bullet emmiter postion
     bulletEmitter.y = positionY + 3;
