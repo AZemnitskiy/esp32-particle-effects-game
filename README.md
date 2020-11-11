@@ -4,6 +4,9 @@
  Tested to work with SSD1306 OLED display, but should work with most other monochrome and color displays.
  ESP32 is not strictly needed - this should work on any Arduino compatible platform, just keep in mind that complex particle effects might require more compute capacity then a vanilla Arduino Uno can provide for smooth animation effects. 
    
+# Gameplay Video:
+[https://youtu.be/A6KwtKLPqg0](https://youtu.be/A6KwtKLPqg0)
+
  ### OLED Display and Button Wiring with Esp32 NodeMCU
 OLED 1306 display supports SPI communication protocol. You can use the following table as a reference.
 

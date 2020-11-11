@@ -56,6 +56,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 int positionX = 20, positionY = 30, stepX = 0, stepY = 0, trispeed = 3;
+bool hasSpaceshipCollision = false;
 
 // particle settings
 int fireWidth = 5;
@@ -100,20 +101,18 @@ Particle_Std bullets[numBullets];
 Emitter_Fixed bulletEmitter(positionX + 15, positionY + 3, bulletSpeedOff, 0, bulletTtlOff);
 GfxParticleSys bulletSystem(&display, WHITE, numBullets, bullets, &bulletEmitter);
 
-
 void detectBulletWithMeteoriteCollisions(){
-  for (int i = 0; i < numBullets; i++)
-  {
-   if( bullets[i].isAlive) {
-      for (int j = 0; j < numMeteoriteParticles; j++)
-      {
-         if( meteoriteParticles[j].isAlive) {
+  for (int j = 0; j < numMeteoriteParticles; j++){
+    if( meteoriteParticles[j].isAlive) {
+      
+      // meteorite - "circle"
+      float circleRadius = (float) round((int)(8 /abs(max(meteoriteParticles[j].vx, -2))));
+      c2v center = { (float) meteoriteParticles[j].x, (float)meteoriteParticles[j].y};
+      c2Circle meteoriteCircle = {center, circleRadius};
 
-            // meteorite - "circle"
-            float circleRadius = (float) round((int)(8 /abs(max(meteoriteParticles[j].vx, -2))));
-            c2v center = { (float) meteoriteParticles[j].x, (float)meteoriteParticles[j].y};
-            c2Circle meteoriteCircle = {center, circleRadius};
-
+      // check bullet collisions
+      for (int i = 0; i < numBullets; i++){
+        if( bullets[i].isAlive) {
             // bullet trace - "capsule"
             c2v start = {(float) (bullets[i].x - bulletSpeedOn), (float) bullets[i].y};
             c2v end = {(float) bullets[i].x, (float)bullets[i].y};
@@ -129,6 +128,22 @@ void detectBulletWithMeteoriteCollisions(){
             }
          }
       }
+
+     // check spaceship collisions
+     // positionY, positionX
+      // int count = 6;
+      // c2v verts[C2_MAX_POLYGON_VERTS] = {{}, {}, {}, {}, {}};
+      // c2v norms[C2_MAX_POLYGON_VERTS];
+      // c2Poly spaceshipPolygon = {count, *verts, *norms};
+      // c2MakePoly(&spaceshipPolygon);
+      // if(c2CircletoPoly(meteoriteCircle, &spaceshipPolygon, NULL) && !hasSpaceshipCollision){
+      //     hasSpaceshipCollision = true;
+      //     // substract one life
+      // }
+      // else {
+      //   hasSpaceshipCollision = false;
+      // }
+
     }
   }
 }
