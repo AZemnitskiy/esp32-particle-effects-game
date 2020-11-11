@@ -1,6 +1,8 @@
  # Meteorite Shooter
  Meteorite shooter game for ESP32 based on Adafruit_GFX library that uses particles physics for all animation effects.
    
+![screenshot](https://raw.githubusercontent.com/AZemnitskiy/esp32-particle-effects-game/main/img/screenshot.PNG)
+
  Tested to work with SSD1306 OLED display, but should work with most other monochrome and color displays.
  ESP32 is not strictly needed - this should work on any Arduino compatible platform, just keep in mind that complex particle effects might require more compute capacity then a vanilla Arduino Uno can provide for smooth animation effects. 
    
