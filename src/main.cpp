@@ -17,6 +17,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/Org_01.h>
 
 // particle & system
 #include <ParticleSys.h>
@@ -33,6 +34,13 @@
 #include <Sprites.h>
 #include <GfxParticleSys.h>
 
+// Audio effects
+#include "SPIFFS.h"
+#include "AudioFileSourceSPIFFS.h"
+#include "AudioFileSourceID3.h"
+#include "AudioGeneratorMP3.h"
+#include "AudioOutputI2S.h"
+
 #define CUTE_C2_IMPLEMENTATION
 
 #include <cute_c2.h>
@@ -40,16 +48,16 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-#define OLED_MOSI  23 // SCL
-#define OLED_CLK   18 // SDA
+#define OLED_MOSI  18 // SCL
+#define OLED_CLK   23 // SDA
 #define OLED_DC    21
 #define OLED_CS    5
-#define OLED_RESET 4
+#define OLED_RESET 17
 
-#define BUTUP 19
-#define BUTDOWN 16
-#define BUTRIGHT 22
-#define BUTLEFT 17
+#define BUTUP 14
+#define BUTDOWN 27
+#define BUTRIGHT 26
+#define BUTLEFT 32
 
 // display
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -57,6 +65,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 int positionX = 20, positionY = 30, stepX = 0, stepY = 0, trispeed = 3;
 bool hasSpaceshipCollision = false;
+int score = 0, lives = 3;
 
 // particle settings
 int fireWidth = 5;
@@ -101,6 +110,13 @@ Particle_Std bullets[numBullets];
 Emitter_Fixed bulletEmitter(positionX + 15, positionY + 3, bulletSpeedOff, 0, bulletTtlOff);
 GfxParticleSys bulletSystem(&display, WHITE, numBullets, bullets, &bulletEmitter);
 
+// sounds
+TaskHandle_t Task1;
+AudioGeneratorMP3 *mp3;
+AudioFileSourceSPIFFS *file;
+AudioOutputI2S *out;
+AudioFileSourceID3 *id3;
+
 void detectBulletWithMeteoriteCollisions(){
   for (int j = 0; j < numMeteoriteParticles; j++){
     if( meteoriteParticles[j].isAlive) {
@@ -125,6 +141,7 @@ void detectBulletWithMeteoriteCollisions(){
               explosionCenter.y = meteoriteParticles[j].y;
               meteoriteParticles[j].isAlive = false;
               explosionSystem.cycles_remaining = numExplosionParticles;
+              score++;
             }
          }
       }
@@ -177,12 +194,20 @@ void detectBulletWithMeteoriteCollisions(){
 // }
 
 void drawLives() {
-  display.fillRect(-1, -1, 30,10, BLACK);
- // display.drawRect(-1, -1, 30,10, WHITE);
-  for (int i = 0; i < 3; i++)
-  {
-     display.drawBitmap(1  + i * 9, 1, life, 7, 6, WHITE);
-  }
+  display.fillRect(-1, -1, 20,10, BLACK);
+  display.drawBitmap(1, 1, life, 7, 6, WHITE);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(10, 5);
+  display.print("x");
+  display.print(lives);
+}
+
+void drawScore() {
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(1, SCREEN_HEIGHT - 1);
+  display.print(score);
 }
 
 void drawSpaceship()
@@ -191,11 +216,36 @@ void drawSpaceship()
   display.drawBitmap(positionX+1, positionY - 3, userShip, USER_SHIP_WIDTH, USER_SHIP_HIGHT, WHITE);
 }
 
+void playBackgroundMusic( void * pvParameters ){
+  file = new AudioFileSourceSPIFFS("/background_3.mp3");
+  id3 = new AudioFileSourceID3(file);
+  out = new AudioOutputI2S(0, 1);
+  out->SetGain(((float)60)/100.0);
+  out->SetOutputModeMono(true);
+  mp3 = new AudioGeneratorMP3();
+  mp3->begin(id3, out, true);
+
+  for(;;){
+     if (mp3->isRunning()) {
+        if (!mp3->loop()) 
+        {
+          // id3 = new AudioFileSourceID3(file);
+          // mp3->begin(id3, out);
+        }
+      }
+  }
+}
+
 void setup() {
   Serial.begin(9600);
+  SPIFFS.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
+  
+  // configure display
   display.clearDisplay();
+  display.setFont(&Org_01);
 
+  // set various particle system settings
   Emitter_Fire::maxTtl = 6;
   Particle_Attractor::atf = 2;
 
@@ -203,10 +253,24 @@ void setup() {
   explosionSystem.is_forever = false;
   explosionSystem.cycles_remaining = 0;
 
+  // enable controls
   pinMode(BUTUP, INPUT_PULLUP);
   pinMode(BUTDOWN, INPUT_PULLUP);
   pinMode(BUTRIGHT, INPUT_PULLUP);
   pinMode(BUTLEFT, INPUT_PULLUP);
+
+
+//create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+  xTaskCreatePinnedToCore(
+                    playBackgroundMusic,   /* Task function. */
+                    "backgroundMusic",     /* name of task. */
+                    10000,                 /* Stack size of task */
+                    NULL,                  /* parameter of the task */
+                    1,                     /* priority of the task */
+                    &Task1,                /* Task handle to keep track of created task */
+                    1);                    /* pin task to core 0 */ 
+  
+
 }
 
 void processInputs() {
@@ -268,7 +332,7 @@ void processInputs() {
 
 void loop() {
   display.clearDisplay();
-
+  
   // read button inputs
   processInputs();
 
@@ -294,9 +358,11 @@ void loop() {
   // draw other objects
   drawSpaceship();
   drawLives();
+  drawScore();
 
   // refreshed screen
   display.display();
   delay(40);
 }
+
 
