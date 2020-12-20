@@ -45,8 +45,6 @@ In-game push buttons were wired as follows:
 ### Used libs
 - [arduino-particle-sys](https://github.com/giladaya/arduino-particle-sys)
   Emitter library for Arduino by Gilad Dayagi
-- [cute_c2](https://github.com/RandyGaul/cute_headers/blob/master/cute_c2.h)
-  Header only library for collision detection
 - [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library)
   Drawing graphic primitives
 
